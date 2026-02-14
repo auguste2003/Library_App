@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: library-service-config
+  namespace: library-app
+  labels:
+    app: library-service
+data:
+
+  # Gateway URL
+  GATEWAY_URL: "http://api-gateway:8080"
+  
+  # Frontend URL (falls benötigt)
+  FRONTEND_URL: "http://localhost:4200"
+  
+  

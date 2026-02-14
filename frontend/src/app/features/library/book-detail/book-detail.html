@@ -1,0 +1,58 @@
+<div class="container mx-auto p-6">
+    <div class="mb-4">
+        <a routerLink="/books" class="text-blue-500 hover:text-blue-700">&larr; Back to List</a>
+    </div>
+
+    @if (loading() && !book()) {
+    <div class="flex h-64 items-center justify-center">
+        <div class="h-12 w-12 animate-spin rounded-full border-t-2 border-b-2 border-blue-500"></div>
+    </div>
+    } @else if (book()) {
+    <div class="overflow-hidden rounded-lg bg-white shadow-lg md:flex">
+        <div class="flex items-center justify-center bg-gray-200 p-10 md:w-1/3">
+            <span class="text-9xl">📖</span>
+        </div>
+        <div class="p-8 md:w-2/3">
+
+            <h1 class="mb-2 text-4xl font-bold text-gray-800">{{ book()?.title }}</h1>
+            <h2 class="mb-4 text-xl text-gray-600">by {{ book()?.author }}</h2>
+
+            <div class="mb-6 grid grid-cols-2 gap-4 text-sm">
+                <div>
+                    <span class="block font-bold text-gray-500">ISBN</span>
+                    <span>{{ book()?.isbn }}</span>
+                </div>
+                <div>
+                    <span class="block font-bold text-gray-500">Status</span>
+                    <span class="rounded-full px-2 py-1 text-xs font-semibold inline-block mt-1"
+                        [class.bg-green-100]="!book()?.borrowed" [class.text-green-800]="!book()?.borrowed"
+                        [class.bg-red-100]="book()?.borrowed" [class.text-red-800]="book()?.borrowed">
+                        {{ book()?.borrowed ? 'Borrowed' : 'Available' }}
+                    </span>
+                </div>
+            </div>
+
+            @if (!book()?.borrowed) {
+            @if (authService.isAuthenticated) {
+            <button (click)="borrowBook()" [disabled]="loading()"
+                class="rounded bg-blue-600 px-6 py-3 font-bold text-white shadow hover:bg-blue-700 focus:outline-none disabled:opacity-50 w-full md:w-auto">
+                Borrow this Book
+            </button>
+            } @else {
+            <div class="rounded bg-blue-50 p-4 border border-blue-100">
+                <p class="text-blue-800 mb-2">Please log in to borrow books.</p>
+                <a routerLink="/login"
+                    class="inline-block rounded bg-blue-600 px-4 py-2 text-white text-sm font-bold hover:bg-blue-700">Sign
+                    In</a>
+            </div>
+            }
+            } @else {
+            <div class="rounded bg-gray-100 p-4 text-gray-600 italic">
+                This book is currently unavailable.
+            </div>
+            }
+        </div>
+    </div>
+    }
+    <app-dialog></app-dialog>
+</div>

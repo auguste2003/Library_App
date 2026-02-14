@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library App - Implementation Plan</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown-light.min.css">
+    <style>
+        body {
+            box-sizing: border-box;
+            min-width: 200px;
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 45px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            margin: 30px 0;
+            background-color: #f6f8fa;
+            padding: 20px;
+            border-radius: 6px;
+        }
+
+        @media (max-width: 767px) {
+            body {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+
+<body class="markdown-body">
+
+    <h1>Production-Ready JWT Security Implementation</h1>
+
+    <h2>Goal</h2>
+
+    <p>Migrate from LocalStorage-based JWT storage to a production-ready security model using:</p>
+    <ol>
+        <li><strong>HttpOnly Cookies</strong> for token storage (XSS protection)</li>
+        <li><strong>Refresh Token Pattern</strong> (short-lived access tokens)</li>
+        <li><strong>SameSite Cookies</strong> (CSRF protection)</li>
+        <li><strong>Secure flag</strong> (HTTPS only)</li>
+    </ol>
+
+    <h2>Current Security Issues</h2>
+
+    <h3>❌ LocalStorage Vulnerabilities:</h3>
+    <ul>
+        <li><strong>XSS Attack Vector</strong>: Any JavaScript can access
+            <code>localStorage.getItem('access_token')</code></li>
+        <li><strong>No HttpOnly Protection</strong>: Tokens exposed to all scripts</li>
+        <li><strong>Long-lived Tokens</strong>: If stolen, valid until expiration</li>
+    </ul>
+
+    <h3>✅ Production Solution:</h3>
+    <ul>
+        <li><strong>HttpOnly Cookies</strong>: JavaScript cannot access tokens</li>
+        <li><strong>Short Access Tokens</strong>: 15 minutes (limits damage window)</li>
+        <li><strong>Refresh Tokens</strong>: 7 days in HttpOnly cookie</li>
+        <li><strong>SameSite=Strict</strong>: CSRF protection</li>
+    </ul>
+
+    <hr>
+
+    <h2>Architecture Overview</h2>
+
+    <div class="mermaid">
+        sequenceDiagram
+        participant Frontend
+        participant Backend
+        participant Cookie
+
+        Frontend->>Backend: POST /login (credentials)
+        Backend->>Backend: Validate & create tokens
+        Backend->>Cookie: Set HttpOnly cookies (access + refresh)
+        Backend->>Frontend: 200 OK (no token in body!)
+
+        Frontend->>Backend: GET /books (auto sends cookies)
+        Backend->>Backend: Validate access token from cookie
+        Backend->>Frontend: 200 OK + data
+
+        Note over Frontend,Backend: Access token expires (15 min)
+
+        Frontend->>Backend: GET /books (expired access token)
+        Backend->>Frontend: 401 Unauthorized
+        Frontend->>Backend: POST /refresh (refresh token in cookie)
+        Backend->>Backend: Validate refresh token
+        Backend->>Cookie: Set new access token cookie
+        Backend->>Frontend: 200 OK
+        Frontend->>Backend: Retry GET /books
+        Backend->>Frontend: 200 OK + data
+    </div>
+
+    <hr>
+
+    <h2>Proposed Changes</h2>
+
+    <h3>Backend Changes</h3>
+
+    <h4>1. Update JWT Configuration</h4>
+    <p>Add separate token generation methods for Access and Refresh tokens.</p>
+
+    <h4>2. Update Authentication Controller</h4>
+    <p>Update <code>/login</code> to set HttpOnly cookies instead of returning tokens in the body.</p>
+
+    <h4>3. Add Refresh Token Endpoint</h4>
+    <p>Create <code>POST /refresh</code> endpoint to issue new access tokens using the refresh cookie.</p>
+
+    <h4>4. Update JWT Filter</h4>
+    <p>Modify <code>JwtAuthenticationFilter</code> to read tokens from cookies instead of the Authorization header.</p>
+
+    <h4>5. Update CORS Configuration</h4>
+    <p>Enable <code>allowCredentials(true)</code> to allow cookies to be sent cross-origin (if needed, or same-origin).
+    </p>
+
+    <h4>6. Update Logout</h4>
+    <p>Create <code>/logout</code> endpoint to clear the HttpOnly cookies.</p>
+
+    <hr>
+
+    <h3>Frontend Changes</h3>
+
+    <h4>1. Update Auth Service</h4>
+    <p>Remove LocalStorage usage. Update login/logout methods to use <code>withCredentials: true</code>.</p>
+
+    <h4>2. Add HTTP Interceptor</h4>
+    <p>Create an <code>AuthInterceptor</code> to automatically handle 401 errors by calling the refresh endpoint and
+        retrying the original request.</p>
+
+    <h4>3. Add /me Endpoint (Backend)</h4>
+    <p>Since the frontend no longer has the token to decode, add a <code>/me</code> endpoint to fetch current user
+        details.</p>
+
+    <hr>
+
+    <h2>Security Benefits</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Feature</th>
+                <th>Before</th>
+                <th>After</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>XSS Protection</strong></td>
+                <td>❌ Vulnerable</td>
+                <td>✅ Protected (HttpOnly)</td>
+            </tr>
+            <tr>
+                <td><strong>Token Lifetime</strong></td>
+                <td>24 hours</td>
+                <td>✅ 15 minutes</td>
+            </tr>
+            <tr>
+                <td><strong>CSRF Protection</strong></td>
+                <td>✅ Yes</td>
+                <td>✅ Yes (SameSite)</td>
+            </tr>
+            <tr>
+                <td><strong>Token in JS</strong></td>
+                <td>❌ Accessible</td>
+                <td>✅ Not accessible</td>
+            </tr>
+            <tr>
+                <td><strong>Auto Refresh</strong></td>
+                <td>❌ No</td>
+                <td>✅ Yes</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <hr>
+
+    <h2>Migration Steps Status</h2>
+
+    <ul>
+        <li>✅ Update backend JWT service (access + refresh tokens)</li>
+        <li>✅ Update authentication controller (cookie-based)</li>
+        <li>✅ Add refresh endpoint</li>
+        <li>✅ Update JWT filter (read from cookies)</li>
+        <li>✅ Update CORS (allow credentials)</li>
+        <li>✅ Add /me endpoint</li>
+        <li>✅ Update frontend auth service (remove localStorage)</li>
+        <li>✅ Add HTTP interceptor (auto-refresh)</li>
+        <li>✅ Test login/logout flow</li>
+        <li>✅ Test token refresh</li>
+    </ul>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            securityLevel: 'loose',
+        });
+    </script>
+</body>
+
+</html>

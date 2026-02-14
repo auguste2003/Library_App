@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library App - Architecture</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown-light.min.css">
+    <style>
+        body {
+            box-sizing: border-box;
+            min-width: 200px;
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 45px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            margin: 30px 0;
+            background-color: #f6f8fa;
+            padding: 20px;
+            border-radius: 6px;
+        }
+
+        @media (max-width: 767px) {
+            body {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+
+<body class="markdown-body">
+
+    <h1>System Architecture & Authentication Flow</h1>
+
+    <p>This document provides a visual and technical overview of the Library Application's architecture, including
+        container interactions and the secure JWT authentication flow.</p>
+
+    <h2>1. Container Architecture (Docker Compose)</h2>
+
+    <p>The application is composed of several Docker containers that interact within a private network. The <strong>API
+            Gateway</strong> acts as the single entry point for the Frontend.</p>
+
+    <div class="mermaid">
+        graph TD
+        User((User))
+
+        subgraph DockerNetwork [Docker Network]
+        Frontend["Frontend Application\n(Angular / Nginx)"]
+        Gateway["API Gateway\n(Spring Cloud Gateway)"]
+
+        AuthService["Auth Service\n(Spring Boot)"]
+        LibraryService["Library Service\n(Spring Boot)"]
+
+        AuthDB[("Auth DB\n(PostgreSQL)")]
+        LibraryDB[("Library DB\n(PostgreSQL)")]
+        MailHog["MailHog\n(SMTP Testing)"]
+        end
+
+        User -- "Browser (HTTP/HTTPS)" --> Frontend
+        Frontend -- "API Requests (/api/...)" --> Gateway
+
+        Gateway -- "/api/v1/auth/*" --> AuthService
+        Gateway -- "/api/v1/library/*" --> LibraryService
+
+        AuthService -- "Read/Write" --> AuthDB
+        LibraryService -- "Read/Write" --> LibraryDB
+        AuthService -- "Send Emails" --> MailHog
+    </div>
+
+    <h3>Key Components:</h3>
+    <ul>
+        <li><strong>Frontend</strong>: Serves the Angular application.</li>
+        <li><strong>API Gateway</strong>: Routes requests to appropriate microservices. Handles CORS and centralizes
+            routing.</li>
+        <li><strong>Auth Service</strong>: Manages user registration, login, and token issuance (JWT).</li>
+        <li><strong>Library Service</strong>: Manages books and loans. Protected by JWT validation.</li>
+        <li><strong>Databases</strong>: Dedicated PostgreSQL instances for isolation.</li>
+    </ul>
+
+    <hr>
+
+    <h2>2. JWT Authentication Flow</h2>
+
+    <p>The application uses a <strong>stateless</strong> authentication mechanism with <strong>HttpOnly Cookies</strong>
+        for maximum security.</p>
+
+    <h3>Login & Token Issuance</h3>
+
+    <div class="mermaid">
+        sequenceDiagram
+        participant U as User
+        participant F as Frontend
+        participant G as API Gateway
+        participant A as Auth Service
+        participant D as Database
+
+        U->>F: Enters Credentials
+        F->>G: POST /auth/authenticate
+        G->>A: Forward Request
+        A->>D: Validate Credentials
+        D-->>A: User Valid
+        A->>A: Generate Access Token (15min)
+        A->>A: Generate Refresh Token (7days)
+        A-->>G: Response + Set-Cookie (Refresh Token, HttpOnly)
+        G-->>F: JSON (Access Token) + Cookie
+        F->>F: Store Access Token in Memory
+    </div>
+
+    <h3>Accessing Protected Resources (e.g., Borrowing a Book)</h3>
+
+    <div class="mermaid">
+        sequenceDiagram
+        participant U as User
+        participant F as Frontend
+        participant G as API Gateway
+        participant L as Library Service
+
+        U->>F: Click "Borrow Book"
+        F->>G: POST /library/loans<br>Authorization: Bearer [Access Token]
+        G->>L: Forward Request
+        L->>L: Validate JWT Signature
+        L->>L: Extract User Role & Email
+        alt Token Valid
+        L-->>G: 200 OK (Loan Created)
+        G-->>F: 200 OK
+        F-->>U: Show Success Dialog
+        else Token Expired
+        L-->>G: 401 Unauthorized
+        G-->>F: 401 Unauthorized
+        F->>F: Trigger Refresh Flow
+        end
+    </div>
+
+    <hr>
+
+    <h2>3. API Endpoints Overview</h2>
+
+    <h3>Auth Service (<code>/api/v1/auth</code>)</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Method</th>
+                <th>Endpoint</th>
+                <th>Description</th>
+                <th>Auth Required</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>POST</code></td>
+                <td><code>/register</code></td>
+                <td>Register a new user</td>
+                <td>No</td>
+            </tr>
+            <tr>
+                <td><code>POST</code></td>
+                <td><code>/authenticate</code></td>
+                <td>Login and receive tokens</td>
+                <td>No</td>
+            </tr>
+            <tr>
+                <td><code>POST</code></td>
+                <td><code>/refresh-token</code></td>
+                <td>Get new access token using cookie</td>
+                <td>No (Cookie req)</td>
+            </tr>
+            <tr>
+                <td><code>POST</code></td>
+                <td><code>/forgot-password</code></td>
+                <td>Request password reset email</td>
+                <td>No</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>Library Service (<code>/api/v1/library/books</code>, <code>/api/v1/library/loans</code>)</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Method</th>
+                <th>Endpoint</th>
+                <th>Description</th>
+                <th>Auth Required</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>GET</code></td>
+                <td><code>/books</code></td>
+                <td>List paginated books</td>
+                <td>Yes</td>
+            </tr>
+            <tr>
+                <td><code>GET</code></td>
+                <td><code>/books/{id}</code></td>
+                <td>Get book details</td>
+                <td>Yes</td>
+            </tr>
+            <tr>
+                <td><code>POST</code></td>
+                <td><code>/loans</code></td>
+                <td>Borrow a book</td>
+                <td>Yes</td>
+            </tr>
+            <tr>
+                <td><code>GET</code></td>
+                <td><code>/loans</code></td>
+                <td>Get current user's loans</td>
+                <td>Yes</td>
+            </tr>
+            <tr>
+                <td><code>POST</code></td>
+                <td><code>/loans/{id}/return</code></td>
+                <td>Return a book (Admin/User)</td>
+                <td>Yes</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <hr>
+
+    <h2>4. Key Security Features implemented</h2>
+
+    <ol>
+        <li><strong>HttpOnly Cookies</strong>: The Refresh Token is stored in a cookie that JavaScript cannot access,
+            preventing XSS attacks from stealing the long-lived token.</li>
+        <li><strong>Short-lived Access Tokens</strong>: The Access Token (used for API calls) expires quickly (e.g., 15
+            mins), minimizing the window of opportunity if stolen.</li>
+        <li><strong>Role-Based Access Control (RBAC)</strong>: The JWT contains the user's role (<code>ADMIN</code> or
+            <code>USER</code>), allowing the backend to enforce permissions securely.</li>
+    </ol>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            securityLevel: 'loose',
+        });
+    </script>
+</body>
+
+</html>

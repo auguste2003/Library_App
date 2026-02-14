@@ -1,0 +1,15 @@
+
+# StatefulSet Service für auth-postgres( Auth-Service)
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-postgres-service
+  namespace: library-app
+spec:
+  selector:
+    app: auth-postgres
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+  type: ClusterIP 

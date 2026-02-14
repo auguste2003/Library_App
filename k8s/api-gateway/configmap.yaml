@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-gateway-config
+  namespace: library-app
+data:
+  FRONTEND_URL: http://localhost:4200
+  AUTH_SERVICE_URL: http://auth-service:8080
+  LIBRARY_SERVICE_URL: http://library-service:8080

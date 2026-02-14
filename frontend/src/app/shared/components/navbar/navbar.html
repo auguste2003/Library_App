@@ -1,0 +1,144 @@
+@if (shouldShowNavbar && currentUser) {
+<nav
+    class="sticky top-0 z-50 bg-white/95 backdrop-blur-md shadow-md border-b border-gray-100 transition-all duration-300">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+            <!-- Logo and primary nav -->
+            <div class="flex">
+                <!-- Logo -->
+                <div class="flex-shrink-0 flex items-center">
+                    <a routerLink="/books" class="text-2xl font-bold text-blue-600">
+                        📚 Library
+                    </a>
+                </div>
+
+                <!-- Desktop Navigation -->
+                <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                    <a routerLink="/books" routerLinkActive="border-blue-500 text-gray-900"
+                        [routerLinkActiveOptions]="{exact: false}"
+                        class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                        Library
+                    </a>
+
+                    <a routerLink="/my-loans" routerLinkActive="border-blue-500 text-gray-900"
+                        class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                        My Loans
+                    </a>
+
+                    @if (isAdmin) {
+                    <a routerLink="/admin" routerLinkActive="border-blue-500 text-gray-900"
+                        [routerLinkActiveOptions]="{exact: false}"
+                        class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                        Admin Dashboard
+                    </a>
+                    }
+                </div>
+            </div>
+
+            <!-- User menu -->
+            <div class="hidden sm:ml-6 sm:flex sm:items-center">
+                <div class="ml-3 relative">
+                    <div>
+                        <button (click)="toggleUserMenu()" type="button"
+                            class="bg-white rounded-full flex text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            id="user-menu-button">
+                            <span class="sr-only">Open user menu</span>
+                            <div
+                                class="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold">
+                                {{ currentUser?.firstname?.charAt(0) || 'U' }}
+                            </div>
+                        </button>
+                    </div>
+
+                    @if (isUserMenuOpen()) {
+                    <div
+                        class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-visible z-50">
+                        <div class="px-4 py-2 text-sm text-gray-700 border-b">
+                            <div class="font-medium">{{ currentUser?.firstname }} {{ currentUser?.lastname }}</div>
+                            <div class="text-xs text-gray-500">{{ currentUser?.email }}</div>
+                        </div>
+                        <a routerLink="/change-password" (click)="closeMenus()"
+                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            Change Password
+                        </a>
+                        <button (click)="logout()"
+                            class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            Logout
+                        </button>
+                    </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Mobile menu button -->
+            <div class="flex items-center sm:hidden">
+                <button (click)="toggleMenu()" type="button"
+                    class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500">
+                    <span class="sr-only">Open main menu</span>
+                    @if (!isMenuOpen()) {
+                    <svg class="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                    } @else {
+                    <svg class="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile menu -->
+    @if (isMenuOpen()) {
+    <div class="sm:hidden">
+        <div class="pt-2 pb-3 space-y-1">
+            <a routerLink="/books" (click)="closeMenus()" routerLinkActive="bg-blue-50 border-blue-500 text-blue-700"
+                class="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
+                Library
+            </a>
+
+            <a routerLink="/my-loans" (click)="closeMenus()" routerLinkActive="bg-blue-50 border-blue-500 text-blue-700"
+                class="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
+                My Loans
+            </a>
+
+            @if (isAdmin) {
+            <a routerLink="/admin" (click)="closeMenus()" routerLinkActive="bg-blue-50 border-blue-500 text-blue-700"
+                class="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
+                Admin Dashboard
+            </a>
+            }
+        </div>
+
+        <div class="pt-4 pb-3 border-t border-gray-200">
+            <div class="flex items-center px-4">
+                <div class="flex-shrink-0">
+                    <div
+                        class="h-10 w-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold">
+                        {{ currentUser?.firstname?.charAt(0) || 'U' }}
+                    </div>
+                </div>
+                <div class="ml-3">
+                    <div class="text-base font-medium text-gray-800">{{ currentUser?.firstname }} {{
+                        currentUser?.lastname }}</div>
+                    <div class="text-sm font-medium text-gray-500">{{ currentUser?.email }}</div>
+                </div>
+            </div>
+            <div class="mt-3 space-y-1">
+                <a routerLink="/change-password" (click)="closeMenus()"
+                    class="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100">
+                    Change Password
+                </a>
+                <button (click)="logout()"
+                    class="block w-full text-left px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100">
+                    Logout
+                </button>
+            </div>
+        </div>
+    </div>
+    }
+</nav>
+}

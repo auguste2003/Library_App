@@ -1,0 +1,47 @@
+<div class="flex h-screen bg-gray-100">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-gray-900 text-white hidden md:block flex-shrink-0">
+        <div class="p-4 border-b border-gray-800">
+            <h1 class="text-xl font-bold flex items-center gap-2">
+                <span class="text-blue-500">⚡</span> Admin Panel
+            </h1>
+        </div>
+        <nav class="mt-4">
+            <a routerLink="/admin/books" routerLinkActive="bg-gray-800 text-blue-400 border-r-4 border-blue-500"
+                class="block py-3 px-4 hover:bg-gray-800 transition-colors">
+                <span class="mr-2">📚</span> Books
+            </a>
+            <a routerLink="/admin/loans" routerLinkActive="bg-gray-800 text-blue-400 border-r-4 border-blue-500"
+                class="block py-3 px-4 hover:bg-gray-800 transition-colors">
+                <span class="mr-2">🔄</span> Loans
+            </a>
+            <a routerLink="/admin/users" routerLinkActive="bg-gray-800 text-blue-400 border-r-4 border-blue-500"
+                class="block py-3 px-4 hover:bg-gray-800 transition-colors">
+                <span class="mr-2">👥</span> Users
+            </a>
+            <div class="mt-8 border-t border-gray-800 pt-4">
+                <a routerLink="/books"
+                    class="block py-3 px-4 hover:bg-gray-800 transition-colors text-gray-400 hover:text-white">
+                    <span class="mr-2">↩️</span> Back to Library
+                </a>
+                <button (click)="logout()"
+                    class="w-full text-left py-3 px-4 hover:bg-red-900 hover:text-red-100 transition-colors text-red-400">
+                    <span class="mr-2">🚪</span> Logout
+                </button>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Mobile Header (Visible only on small screens) -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+        <header class="md:hidden bg-gray-900 text-white p-4 flex justify-between items-center">
+            <span class="font-bold">Admin Panel</span>
+            <button class="text-gray-300">☰</button>
+        </header>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6">
+            <router-outlet></router-outlet>
+        </main>
+    </div>
+</div>

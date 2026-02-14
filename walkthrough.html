@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library App - Walkthrough & Test Evidence</title>
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown-light.min.css">
+    <style>
+        body {
+            box-sizing: border-box;
+            min-width: 200px;
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 45px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .gallery-item {
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .gallery-item img,
+        .gallery-item video {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .gallery-caption {
+            padding: 10px;
+            background-color: #f6f8fa;
+            border-top: 1px solid #e1e4e8;
+            font-size: 14px;
+            color: #586069;
+        }
+
+        @media (max-width: 767px) {
+            body {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+
+<body class="markdown-body">
+
+    <h1>Library App - Implementation Walkthrough & Test Evidence</h1>
+
+    <p>This document details the recent changes, features implemented, and provides visual evidence of testing (UI &
+        API/Swagger).</p>
+
+    <h2>1. Reactive Search Implementation 🔍</h2>
+
+    <p>Successfully implemented real-time reactive search/filtering for all tables in the application using RxJS
+        operators (<code>debounceTime</code>, <code>distinctUntilChanged</code>).</p>
+
+    <h3>Features</h3>
+    <ul>
+        <li><strong>Book List & Admin Books</strong>: Server-side search with 300ms debounce.</li>
+        <li><strong>Admin Loans & Users</strong>: Client-side instant filtering with Computed Signals.</li>
+    </ul>
+
+    <div class="gallery">
+        <div class="gallery-item">
+            <img src="./assets/responsive_tables_demo_1770195924511.webp" alt="Reactive Search Demo">
+            <div class="gallery-caption"><strong>Demo:</strong> Reactive Search & Responsive Tables (WebP Animation)
+            </div>
+        </div>
+    </div>
+
+    <hr>
+
+    <h2>2. Admin UI Enhancements 🛠️</h2>
+
+    <p>Improved the Admin Dashboard with consistent tables, search bars, and error handling.</p>
+
+    <div class="gallery">
+        <div class="gallery-item">
+            <img src="./assets/admin_users_error_check_1770163370716.webp" alt="Admin Users Error Check">
+            <div class="gallery-caption"><strong>Admin Users:</strong> Error Handling & UI Check</div>
+        </div>
+    </div>
+
+    <hr>
+
+    <h2>3. User Features 👤</h2>
+
+    <p>Enhanced the user experience for borrowing and managing loans.</p>
+
+    <div class="gallery">
+        <div class="gallery-item">
+            <img src="./assets/my_loans_desktop_1770196171553.png" alt="My Loans Desktop">
+            <div class="gallery-caption"><strong>My Loans:</strong> Desktop View</div>
+        </div>
+    </div>
+
+    <hr>
+
+    <h2>4. API & Swagger Verification 🧪</h2>
+
+    <p>Evidence of API testing and Swagger UI verification, ensuring backend endpoints function correctly under various
+        scenarios (Auth, Admin roles, etc.).</p>
+
+    <div class="gallery">
+        <div class="gallery-item">
+            <img src="./assets/uploaded_media_1770159581763.png" alt="Swagger UI Test 1">
+            <div class="gallery-caption">API Documentation / Swagger UI Interaction</div>
+        </div>
+        <div class="gallery-item">
+            <img src="./assets/uploaded_media_1_1770194597067.png" alt="Swagger UI Test 2">
+            <div class="gallery-caption">Endpoint Testing Verification</div>
+        </div>
+        <div class="gallery-item">
+            <img src="./assets/uploaded_media_0_1770194597067.png" alt="Swagger UI Test 3">
+            <div class="gallery-caption">Response Verification</div>
+        </div>
+        <div class="gallery-item">
+            <img src="./assets/uploaded_media_1770193961380.png" alt="Swagger UI Test 4">
+            <div class="gallery-caption">Auth Token Generation</div>
+        </div>
+        <div class="gallery-item">
+            <img src="./assets/uploaded_media_1770219547372.png" alt="Swagger UI Test 5">
+            <div class="gallery-caption">API Schema Validation</div>
+        </div>
+    </div>
+
+    <hr>
+
+    <h2>5. Technical Implementation Details</h2>
+
+    <h3>Code Highlights</h3>
+    <ul>
+        <li><strong>Reactive Forms</strong>: Used `FormControl` with RxJS pipes.</li>
+        <li><strong>Signals</strong>: Leveraged Angular Signals for state management (`books`, `loans`, `users`).</li>
+        <li><strong>Components</strong>: Created reusable `DialogComponent` and `Navbar`.</li>
+    </ul>
+
+    <h3>Security</h3>
+    <ul>
+        <li><strong>HttpOnly Cookies</strong>: Implemented for JWT storage.</li>
+        <li><strong>Role-Based Access</strong>: Secured Admin endpoints.</li>
+        <li><strong>429 Handling</strong>: Added Rate Limit handling page.</li>
+    </ul>
+
+</body>
+
+</html>

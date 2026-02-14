@@ -1,0 +1,15 @@
+
+# StatefulSet Service für library-postgres( Library-Service)
+apiVersion: v1
+kind: Service
+metadata:
+  name: library-postgres-service
+  namespace: library-app
+spec:
+  selector:
+    app: library-postgres
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+  type: ClusterIP 

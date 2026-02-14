@@ -1,0 +1,106 @@
+version: '3.8'
+
+services:
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:4200}
+      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL:-http://auth-service:8080}
+      - LIBRARY_SERVICE_URL=${LIBRARY_SERVICE_URL:-http://library-service:8080}
+    networks:
+      - library-network
+    depends_on:
+      - auth-service
+      - library-service
+
+  auth-service:
+    build: ./auth-service
+    container_name: auth-service
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://auth-db:5432/${AUTH_DB_NAME}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+      - APPLICATION_SECURITY_JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - APPLICATION_SECURITY_JWT_EXPIRATION=${JWT_EXPIRATION}
+      - APPLICATION_SECURITY_JWT_REFRESH_TOKEN_EXPIRATION=${JWT_REFRESH_EXPIRATION}
+      - GATEWAY_URL=${GATEWAY_URL:-http://localhost:8080}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:4200}
+      - MAIL_HOST=${MAIL_HOST}
+      - MAIL_PORT=${MAIL_PORT}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+    depends_on:
+      - auth-db
+      - mailhog
+    networks:
+      - library-network
+
+  library-service:
+    build: ./library-service
+    container_name: library-service
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://library-db:5432/${LIBRARY_DB_NAME}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+      - APPLICATION_SECURITY_JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - GATEWAY_URL=${GATEWAY_URL:-http://localhost:8080}
+    env_file:
+      - .env
+    networks:
+      - library-network
+    depends_on:
+      - library-db
+
+  frontend:
+    build: ./frontend
+    container_name: library-frontend
+    ports:
+      - "4200:80"
+    networks:
+      - library-network
+    depends_on:
+      - api-gateway
+
+  auth-db:
+    image: postgres:15-alpine
+    container_name: auth-db
+    environment:
+      - POSTGRES_DB=${AUTH_DB_NAME}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - auth-db-data:/var/lib/postgresql/data
+    networks:
+      - library-network
+
+  library-db:
+    image: postgres:15-alpine
+    container_name: library-db
+    environment:
+      - POSTGRES_DB=${LIBRARY_DB_NAME}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - library-db-data:/var/lib/postgresql/data
+    networks:
+      - library-network
+
+  mailhog:
+    image: mailhog/mailhog
+    container_name: mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    networks:
+      - library-network
+
+networks:
+  library-network:
+    driver: bridge
+
+volumes:
+  auth-db-data:
+  library-db-data:

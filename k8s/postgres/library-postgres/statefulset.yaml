@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: library-postgres
+  namespace: library-app
+spec:
+  serviceName: "library-postgres"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: library-postgres
+  template:
+    metadata:
+      labels:
+        app: library-postgres
+    spec:
+      containers:
+      - name: library-postgres
+        image: postgres:15-alpine
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"  # 100m = 0.1 CPU Kern
+          limits:
+            memory: "512Mi"
+            cpu: "500m" # 500m = 0.5 CPU Kern
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_USER
+          valueFrom:
+            configMapKeyRef:
+              name: library-postgres-configmap
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: library-postgres-secret
+              key: POSTGRES_PASSWORD
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              name: library-postgres-configmap
+              key: POSTGRES_DB
+        volumeMounts:
+        - name: library-postgres-storage
+          mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+  - metadata:
+      name: library-postgres-storage
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi

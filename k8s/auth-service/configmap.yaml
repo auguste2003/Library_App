@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: auth-service-config
+  namespace: library-app
+  labels:
+    app: auth-service
+data:
+  # JWT Configuration (nicht-sensible Werte)
+  APPLICATION_SECURITY_JWT_EXPIRATION: "86400000"
+  APPLICATION_SECURITY_JWT_REFRESH_TOKEN_EXPIRATION: "604800000"
+  
+  # Gateway URL
+  GATEWAY_URL: "http://api-gateway:8080"
+  
+  # Frontend URL (falls benötigt)
+  FRONTEND_URL: "http://localhost:4200"
+  
+  # Mail Configuration
+  MAIL_HOST: "mailhog"
+  MAIL_PORT: "1025"
+  MAIL_USERNAME: ""
+  MAIL_PASSWORD: ""
+  
+

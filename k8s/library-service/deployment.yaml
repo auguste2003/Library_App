@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: library-service
+  namespace: library-app
+  labels:
+    app: library-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: library-service
+  template:
+    metadata:
+      labels:
+        app: library-service
+    spec:
+      containers:
+      - name: library-service
+        image: library_app-library-service:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        
+        # Environment Variables aus ConfigMap
+        envFrom:
+        - configMapRef:
+            name: library-service-config
+        
+        # Sensitive Environment Variables aus Secret
+        env:
+        - name: SPRING_DATASOURCE_URL
+          valueFrom:
+            secretKeyRef:
+              name: library-service-secret
+              key: database-url
+        - name: SPRING_DATASOURCE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: library-service-secret
+              key: database-username
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: library-service-secret
+              key: database-password
+        - name: APPLICATION_SECURITY_JWT_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: library-service-secret
+              key: jwt-secret-key
+        
+        # Resource Limits
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m" # 250 = 0.25 CPU
+          limits:
+            memory: "512Mi"
+            cpu: "500m" # 500 = 0.5 CPU
+        
+        # Liveness Probe - prüft ob der Container noch läuft
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        # Readiness Probe - prüft ob der Container bereit ist, Traffic zu empfangen
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8080
+          initialDelaySeconds: 45
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3

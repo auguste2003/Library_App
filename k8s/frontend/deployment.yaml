@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: library-frontend
+  namespace: library-app
+spec:
+  selector:
+    matchLabels:
+      app: library-frontend
+  template:
+    metadata:
+      labels:
+        app: library-frontend
+    spec:
+      containers:
+        - name: library-frontend
+          image: library_app-frontend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 4200
+          resources:
+            limits:
+              memory: "256Mi"
+              cpu: "256m"
+            requests:
+              memory: "128Mi"
+              cpu: "128m"

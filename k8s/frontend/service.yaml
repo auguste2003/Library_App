@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: library-frontend
+  namespace: library-app
+spec:
+  selector:
+    app: library-frontend
+  ports:
+    - protocol: TCP
+      port: 80 # Exposed Port in Cluster
+      targetPort: 4200 # Container Port in Pod
