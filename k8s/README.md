@@ -1,46 +1,66 @@
-# Library App - Kubernetes Deployment Guide
+Wir haben zwei Möglichkeiten, um unsere Anwendung in Kubernetes zu deployen:
 
-## Übersicht
+1. Mit Minikube
+2. Mit K3d
 
-Diese Anleitung zeigt, wie du die Library App in Kubernetes (Minikube) deployen, starten, prüfen und debuggen kannst.
+Welche Ressourcen brauchen wir?
 
-## Voraussetzungen
+1. Postgres -> Auth-Service
+2. Postgres -> Library-Service
+3. Auth-Service 
+4. Library-Service 
+5. API-Gateway 
+6. Frontend
 
-- Minikube installiert und gestartet
-- kubectl konfiguriert
-- Docker oder Docker Compose für Image-Builds
+Wir wollen eine klare Trennung der Deployements-Dateien, Wir wollen dann mindestens 6 Ordners. 
+Brauchen wir ein Ingress-Controller? Ich denke ja, um die Anfragen an die richtigen Services weiterzuleiten.
 
-## 📁 Ordnerstruktur
+Ist das dann ausreichend, um die Anwendung in Kubernetes zu deployen?
 
-```
+Welche Ordnerstruktur wollen wir dann haben? Wir trennen auch die Services voneinander.     
+Es muss quasi so aussehen:
+
 /k8s
     /postgres
-        /auth-postgres      # PostgreSQL für Auth-Service
-        /library-postgres   # PostgreSQL für Library-Service
-    /auth-service          # Auth-Service Deployment
-    /library-service       # Library-Service Deployment
-    /api-gateway           # API Gateway Deployment
-    /frontend              # Frontend Deployment
-    /ingress               # Ingress-Konfiguration
-    /scripts               # Deployment-Skripte
-    /namespace.yaml        # Namespace-Definition
-```
+        /auth-postgres
+            /statefulset.yaml -> StatefulSet? Mit volumeClaimTemplates
+            /service.yaml  -> Headless Service für StatefulSet
+            /configmap.yaml
+            /secret.yaml
+        /library-postgres
+            /statefulset.yaml -> StatefulSet? Mit volumeClaimTemplates
+            /service.yaml  -> Headless Service für StatefulSet
+            /configmap.yaml
+            /secret.yaml
+    /auth-service
+        /deployment.yaml -> Liveness und Readiness Probes + Resource Limits
+        /service.yaml
+        /configmap.yaml
+        /secret.yaml
+    /library-service
+        /deployment.yaml -> Liveness und Readiness Probes + Resource Limits
+        /service.yaml
+        /configmap.yaml
+        /secret.yaml
+    /api-gateway
+        /deployment.yaml
+        /service.yaml
+        /configmap.yaml
+        /secret.yaml
+    /frontend
+        /deployment.yaml
+        /service.yaml
+        /configmap.yaml
+        /secret.yaml
+    /ingress
+        /ingress.yaml
+    /scripts
+        /deploy.sh
+        /delete.sh
 
-## 🚀 Anwendung starten
+    /namespace.yaml
+    /README.md
 
-### 1. Minikube starten
-
-```bash
-minikube start
-```
-
-### 2. Ingress-Addon aktivieren
-
-```bash
-minikube addons enable ingress
-```
-
-### 3. Images bauen und in Minikube laden
 
 ```bash
 # Im Hauptverzeichnis des Projekts
