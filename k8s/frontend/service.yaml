@@ -9,4 +9,4 @@ spec:
   ports:
     - protocol: TCP
       port: 80 # Exposed Port in Cluster
-      targetPort: 4200 # Container Port in Pod
+      targetPort: 80 # Container Port in Pod

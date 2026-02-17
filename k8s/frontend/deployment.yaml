@@ -14,10 +14,10 @@ spec:
     spec:
       containers:
         - name: library-frontend
-          image: library_app-frontend:latest
+          image: library_app-frontend:v2
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 4200
+            - containerPort: 80
           resources:
             limits:
               memory: "256Mi"

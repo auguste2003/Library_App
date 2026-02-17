@@ -4,6 +4,6 @@ metadata:
   name: api-gateway-config
   namespace: library-app
 data:
-  FRONTEND_URL: http://localhost:4200
+  FRONTEND_URL: http://localhost:8090
   AUTH_SERVICE_URL: http://auth-service:8080
   LIBRARY_SERVICE_URL: http://library-service:8080
