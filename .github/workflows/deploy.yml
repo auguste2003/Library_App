@@ -1,0 +1,89 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  REGISTRY: ghcr.io
+  # Ersetzt OWNER durch deinen GitHub-Usernamen/Organisationsnamen. Repository-Name in Kleinbuchstaben
+  IMAGE_NAME_PREFIX: ${{ github.repository_owner }}/library-app
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Da das Repository in Kleinbuchstaben umgewandelt werden muss für Docker-Tags:
+      - name: Set lowercase repository name
+        run: |
+          echo "REPO_LOWER=${IMAGE_NAME_PREFIX,,}" >> ${GITHUB_ENV}
+
+      # Build and Push Gateway
+      - name: Build and push Gateway
+        uses: docker/build-push-action@v5
+        with:
+          context: ./api-gateway
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}-gateway:latest
+
+      # Build and Push Auth Service
+      - name: Build and push Auth Service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./auth-service
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}-auth:latest
+
+      # Build and Push Library Service
+      - name: Build and push Library Service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./library-service
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}-library:latest
+
+      # Build and Push Frontend
+      - name: Build and push Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}-frontend:latest
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Execute SSH commands to deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          passphrase: ${{ secrets.VPS_SSH_PASSPHRASE }}
+          script: |
+            cd /opt/library-app
+            git pull origin main
+            cd production
+            # Lade die neuen Images herunter
+            docker compose -f docker-compose.prod.yml pull
+            # Container neustarten
+            docker compose -f docker-compose.prod.yml up -d
+            # Bereinige alte ungenutzte Images, um Speicherplatz zu sparen
+            docker system prune -f

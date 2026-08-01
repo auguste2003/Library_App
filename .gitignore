@@ -31,3 +31,7 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Production Secrets ###
+# Diese Datei darf niemals in Git landen!
+production/.env.production

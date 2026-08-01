@@ -1,0 +1,120 @@
+version: '3.8'
+
+services:
+  api-gateway:
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/library-app-gateway:latest
+    container_name: api-gateway
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9090:8080" # Nur für Host-Nginx erreichbar (Port 8080 war belegt)
+    environment:
+      - FRONTEND_URL=http://${DOMAIN_NAME}
+      - AUTH_SERVICE_URL=http://auth-service:8080
+      - LIBRARY_SERVICE_URL=http://library-service:8080
+    networks:
+      - library-network
+    depends_on:
+      - auth-service
+      - library-service
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  auth-service:
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/library-app-auth:latest
+    container_name: auth-service
+    restart: unless-stopped
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://auth-db:5432/${AUTH_DB_NAME}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+      - APPLICATION_SECURITY_JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - APPLICATION_SECURITY_JWT_EXPIRATION=${JWT_EXPIRATION}
+      - APPLICATION_SECURITY_JWT_REFRESH_TOKEN_EXPIRATION=${JWT_REFRESH_EXPIRATION}
+      - GATEWAY_URL=http://${DOMAIN_NAME}/api
+      - FRONTEND_URL=http://${DOMAIN_NAME}
+      - MAIL_HOST=${MAIL_HOST}
+      - MAIL_PORT=${MAIL_PORT}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - MAIL_PROPERTIES_MAIL_SMTP_AUTH=true
+      - MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true
+    depends_on:
+      - auth-db
+    networks:
+      - library-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  library-service:
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/library-app-library:latest
+    container_name: library-service
+    restart: unless-stopped
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://library-db:5432/${LIBRARY_DB_NAME}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+      - APPLICATION_SECURITY_JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - GATEWAY_URL=http://${DOMAIN_NAME}/api
+    networks:
+      - library-network
+    depends_on:
+      - library-db
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  frontend:
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/library-app-frontend:latest
+    container_name: library-frontend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:4200:80" # Nur für Host-Nginx erreichbar
+    networks:
+      - library-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  auth-db:
+    image: postgres:15-alpine
+    container_name: auth-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${AUTH_DB_NAME}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - auth-db-data-prod:/var/lib/postgresql/data
+    networks:
+      - library-network
+
+  library-db:
+    image: postgres:15-alpine
+    container_name: library-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${LIBRARY_DB_NAME}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - library-db-data-prod:/var/lib/postgresql/data
+    networks:
+      - library-network
+
+networks:
+  library-network:
+    driver: bridge
+
+volumes:
+  auth-db-data-prod:
+  library-db-data-prod:
