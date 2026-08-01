@@ -85,6 +85,8 @@ jobs:
             # Umgebungsvariablen aus .env.production laden
             set -a && source .env.production && set +a
             # Lade die neuen Images herunter
-            docker compose -f docker-compose.prod.yml pull
-            # Container neustarten
-            docker compose -f docker-compose.prod.yml up -d
+            docker-compose -f docker-compose.prod.yml pull
+            # Alte Container stoppen (vermeidet ContainerConfig Bug bei v1.29.2)
+            docker-compose -f docker-compose.prod.yml down
+            # Container neu starten
+            docker-compose -f docker-compose.prod.yml up -d
